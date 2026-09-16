@@ -267,13 +267,20 @@
       <div class="muted" id="cp-updated-line" style="font-size:11px;margin-bottom:8px;"></div>
       <div class="row between">
         <button type="button" class="btn danger" id="cp-delete" style="display:none;">Eliminar proyecto</button>
-        <button type="button" class="btn primary" id="cp-save" style="margin-left:auto;">Guardar proyecto</button>
+        <div class="row" style="margin-left:auto;">
+          <button type="button" class="btn" id="cp-report">📄 Resumen ejecutivo</button>
+          <button type="button" class="btn primary" id="cp-save">Guardar proyecto</button>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- RESUMEN -->
   <section class="view" id="view-resumen">
+    <div class="row between" style="margin-bottom:14px;">
+      <div class="eyebrow">Estado general del área técnica</div>
+      <button type="button" class="btn accent" id="btn-portfolio-report">📄 Resumen ejecutivo del backlog</button>
+    </div>
     <div class="panel" style="padding:16px;margin-bottom:16px;">
       <div class="eyebrow" style="margin-bottom:2px;">Fever chart — Backlog + Proyectos CCPM</div>
       <div class="muted" style="font-size:12px;margin-bottom:10px;">% Avance vs. % Buffer consumido. Los proyectos en ejecución con tareas cargadas usan datos reales (como el Excel); el resto usa una aproximación por estado desde que entran al backlog.</div>
@@ -813,6 +820,132 @@
       backToCcpmList();
       showBanner('Proyecto eliminado.', true);
     }).catch(function(err){ showBanner('No se pudo eliminar: '+err.message, false); });
+  });
+
+  // ================= EXECUTIVE REPORT (printable, no dependencies) =================
+  var fmtDateLong = new Intl.DateTimeFormat('es-CO', {day:'numeric', month:'long', year:'numeric'});
+  var fmtDateShort = new Intl.DateTimeFormat('es-CO', {day:'numeric', month:'short', year:'numeric'});
+  function reportShell(title, bodyHtml){
+    return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+
+      '<title>'+esc(title)+'</title>'+
+      '<link rel="preconnect" href="https://fonts.googleapis.com">'+
+      '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">'+
+      '<style>'+
+        '*{box-sizing:border-box;}'+
+        'body{font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,sans-serif;color:#16233B;background:#F3F4F0;margin:0;padding:28px;}'+
+        '.sheet{max-width:760px;margin:0 auto;background:#fff;border:1px solid #DADFE1;padding:36px 40px;}'+
+        '.eyebrow{font-size:12px;color:#7C8794;letter-spacing:.03em;text-transform:uppercase;margin-bottom:4px;}'+
+        'h1{font-size:21px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em;}'+
+        '.subtitle{font-size:12.5px;color:#7C8794;margin-bottom:22px;}'+
+        'h2{font-size:13px;font-weight:600;color:#4A5568;text-transform:uppercase;letter-spacing:.03em;margin:26px 0 10px;border-bottom:1px solid #DADFE1;padding-bottom:6px;}'+
+        'p{font-size:13.5px;line-height:1.55;margin:0 0 8px;}'+
+        '.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:6px;}'+
+        '.g .n{font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:600;}'+
+        '.g .l{font-size:11px;color:#7C8794;margin-top:2px;}'+
+        '.badge{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:3px;color:#16233B;border:1.5px solid #999;}'+
+        'table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px;}'+
+        'th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.02em;color:#7C8794;border-bottom:1px solid #DADFE1;padding:6px 8px;}'+
+        'td{padding:7px 8px;border-bottom:1px solid #ECEDE8;vertical-align:top;}'+
+        'td.num{font-family:"IBM Plex Mono",monospace;text-align:right;white-space:nowrap;}'+
+        '.foot{margin-top:28px;font-size:11px;color:#9AA5B1;border-top:1px solid #DADFE1;padding-top:10px;}'+
+        '.report-actions{max-width:760px;margin:0 auto 16px;display:flex;gap:8px;}'+
+        '.report-actions button{font-family:inherit;font-size:13px;padding:8px 14px;border-radius:3px;border:1px solid #DADFE1;background:#fff;cursor:pointer;}'+
+        '@media print{ body{background:#fff;padding:0;} .sheet{border:none;padding:0;} .report-actions{display:none;} }'+
+      '</style></head><body>'+
+      '<div class="report-actions"><button onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button><button onclick="window.close()">Cerrar</button></div>'+
+      '<div class="sheet">'+bodyHtml+
+        '<div class="foot">Generado el '+fmtUpdated.format(new Date())+' · Coditeq S.A. · Área Técnica</div>'+
+      '</div></body></html>';
+  }
+  function zoneBadgeHtml(zone){
+    if(!zone) return '<span class="badge" style="border-color:#B7BEC3;">Sin datos</span>';
+    return '<span class="badge" style="background:'+zone.bg.replace('var(--zone-green)','#A9DDBC').replace('var(--zone-yellow)','#F4CC7A').replace('var(--zone-red)','#EFA79D')+';border-color:'+zone.bd.replace('var(--ok)','#3D7A52').replace('var(--st-sprint)','#C98A12').replace('var(--danger)','#B3423B')+';">'+zone.name+'</span>';
+  }
+  function buildProjectReportBody(proj){
+    var m = projectMetrics(proj);
+    var zone = m.totalEstimate>0 ? zoneOf(m.bufferConsumption) : null;
+    var tasks = proj.tasks||[];
+    var doneCount = tasks.filter(function(t){return t.fechaCompletada;}).length;
+    var taskRows = tasks.length ? tasks.map(function(t){
+      return '<tr><td>'+esc(t.tarea||'—')+(t.subtarea?'<br><span style="color:#9AA5B1;">'+esc(t.subtarea)+'</span>':'')+'</td>'+
+        '<td>'+esc(t.responsable||'—')+'</td>'+
+        '<td class="num">'+(t.estimado!=null? t.estimado+'d':'—')+'</td>'+
+        '<td>'+(t.fechaCompletada? fmtDateShort.format(new Date(t.fechaCompletada+"T00:00:00")) : '<span style="color:#C98A12;">Pendiente</span>')+'</td>'+
+        '<td>'+esc(t.entregable||'—')+'</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="color:#9AA5B1;font-style:italic;">Sin tareas cargadas.</td></tr>';
+
+    var linked = backlogItemForProject(proj.id);
+
+    return '<div class="eyebrow">Resumen ejecutivo · Coditeq Área Técnica</div>'+
+      '<h1>'+esc(proj.nombreProyecto||proj.nombreIniciativa||'Proyecto sin nombre')+'</h1>'+
+      '<div class="subtitle">Fecha de corte: '+fmtDateLong.format(new Date())+
+        (linked? ' · Iniciativa de backlog: '+esc(linked.codigo||'')+' — '+esc(linked.frente||'') : '')+'</div>'+
+      (proj.objetivo? '<p><b>Objetivo:</b> '+esc(proj.objetivo)+'</p>' : '')+
+      (proj.indicador? '<p><b>Indicador / CdLR:</b> '+esc(proj.indicador)+'</p>' : '')+
+      '<h2>Estado del proyecto</h2>'+
+      '<div class="grid">'+
+        '<div class="g"><div class="n">'+(m.totalEstimate>0? Math.round(m.percentComplete*100)+'%':'—')+'</div><div class="l">Avance</div></div>'+
+        '<div class="g"><div class="n">'+(m.totalEstimate>0? Math.round(m.percentTime*100)+'%':'—')+'</div><div class="l">Tiempo transcurrido</div></div>'+
+        '<div class="g"><div class="n">'+(m.totalEstimate>0? Math.round(m.bufferConsumption*100)+'%':'—')+'</div><div class="l">Buffer consumido</div></div>'+
+        '<div class="g"><div class="n">'+(m.pushBack>0? Math.ceil(m.pushBack)+'d':'0d')+'</div><div class="l">Push back</div></div>'+
+      '</div>'+
+      '<p style="margin-top:10px;">Estado del buffer: '+zoneBadgeHtml(zone)+
+        (m.pushBack>0? ' &nbsp; <span style="color:#B3423B;font-weight:600;">⚠ La fecha de compromiso requiere '+Math.ceil(m.pushBack)+' días adicionales según el estimado actual.</span>' : '')+'</p>'+
+      '<p>Inicio: '+(proj.dateStarted? fmtDateShort.format(new Date(proj.dateStarted+"T00:00:00")):'—')+
+        ' &nbsp;·&nbsp; Vencimiento comprometido: '+(proj.dateDue? fmtDateShort.format(new Date(proj.dateDue+"T00:00:00")):'—')+
+        ' &nbsp;·&nbsp; '+doneCount+' de '+tasks.length+' tareas completadas</p>'+
+      '<h2>Tareas</h2>'+
+      '<table><thead><tr><th>Tarea</th><th>Responsable</th><th>Estimado</th><th>Completada</th><th>Entregable</th></tr></thead>'+
+      '<tbody>'+taskRows+'</tbody></table>';
+  }
+  function buildPortfolioReportBody(){
+    var counts = {}; STATE_ORDER.forEach(function(s){counts[s]=0;});
+    items.forEach(function(i){ if(counts[i.estado]!==undefined) counts[i.estado]++; });
+    var inExec = items.filter(function(i){ return i.estado==='En Ejecución (CCPM)' && i.ccpmProjectId; });
+    var projRows = inExec.length ? inExec.map(function(it){
+      var proj = projects.find(function(p){ return p.id===it.ccpmProjectId; });
+      if(!proj) return '';
+      var m = projectMetrics(proj);
+      var zone = m.totalEstimate>0 ? zoneOf(m.bufferConsumption) : null;
+      return '<tr><td>'+esc(proj.nombreProyecto||proj.nombreIniciativa||'—')+'</td>'+
+        '<td class="num">'+(m.totalEstimate>0? Math.round(m.percentComplete*100)+'%':'—')+'</td>'+
+        '<td class="num">'+(m.totalEstimate>0? Math.round(m.bufferConsumption*100)+'%':'—')+'</td>'+
+        '<td>'+zoneBadgeHtml(zone)+'</td>'+
+        '<td class="num">'+(m.pushBack>0? Math.ceil(m.pushBack)+'d':'—')+'</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="color:#9AA5B1;font-style:italic;">Ningún proyecto en ejecución con tareas cargadas.</td></tr>';
+
+    var candidates = items.filter(function(i){ return !i.sprint && i.estado!=='Hecho' && idx(i)!==null; });
+    candidates.sort(function(a,b){ return idx(b)-idx(a); });
+    var nextRows = candidates.length ? candidates.slice(0,5).map(function(it){
+      return '<tr><td>'+esc(it.iniciativa)+'</td><td>'+esc(it.frente||'—')+'</td><td class="num">'+idx(it).toFixed(2)+'</td></tr>';
+    }).join('') : '<tr><td colspan="3" style="color:#9AA5B1;font-style:italic;">Nada priorizado todavía.</td></tr>';
+
+    return '<div class="eyebrow">Resumen ejecutivo · Coditeq Área Técnica</div>'+
+      '<h1>Backlog General — Formación Técnica</h1>'+
+      '<div class="subtitle">Fecha de corte: '+fmtDateLong.format(new Date())+'</div>'+
+      '<h2>Estado del backlog</h2>'+
+      '<div class="grid">'+STATE_ORDER.map(function(s){
+        return '<div class="g"><div class="n">'+counts[s]+'</div><div class="l">'+s+'</div></div>';
+      }).join('')+'</div>'+
+      '<h2>Proyectos en ejecución (CCPM)</h2>'+
+      '<table><thead><tr><th>Proyecto</th><th>Avance</th><th>Buffer</th><th>Estado</th><th>Push back</th></tr></thead>'+
+      '<tbody>'+projRows+'</tbody></table>'+
+      '<h2>Próximas prioridades (mayor índice, sin sprint)</h2>'+
+      '<table><thead><tr><th>Iniciativa</th><th>Frente</th><th>Índice</th></tr></thead>'+
+      '<tbody>'+nextRows+'</tbody></table>';
+  }
+  function openReportWindow(title, bodyHtml){
+    var w = window.open('', '_blank');
+    if(!w){ showBanner('El navegador bloqueó la ventana del reporte. Permite ventanas emergentes para este sitio.', false); return; }
+    w.document.open();
+    w.document.write(reportShell(title, bodyHtml));
+    w.document.close();
+  }
+  document.getElementById('cp-report').addEventListener('click', function(){
+    openReportWindow('Resumen ejecutivo — '+(currentProject.nombreProyecto||currentProject.nombreIniciativa||'Proyecto'), buildProjectReportBody(currentProject));
+  });
+  document.getElementById('btn-portfolio-report').addEventListener('click', function(){
+    openReportWindow('Resumen ejecutivo — Backlog Área Técnica', buildPortfolioReportBody());
   });
 
   // ================= FEVER CHART (Resumen) — usa datos reales de CCPM cuando existen =================
