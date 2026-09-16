@@ -15,7 +15,7 @@
     --st-backlog:#94A0AD; --st-listo:#3F6FB5; --st-sprint:#C98A12;
     --st-ejec:#BC5B2A; --st-hecho:#3D7A52;
     --danger:#B3423B; --ok:#3D7A52;
-    --zone-green:#E3EEE6; --zone-yellow:#F7ECD2; --zone-red:#F3DEDB;
+    --zone-green:#A9DDBC; --zone-yellow:#F4CC7A; --zone-red:#EFA79D;
     --axis:#B7BEC3;
     --radius:3px;
     --shadow:0 1px 2px rgba(22,35,59,.06);
@@ -28,7 +28,7 @@
       --st-backlog:#8996A3; --st-listo:#6E9CE0; --st-sprint:#E0AC42;
       --st-ejec:#E0824C; --st-hecho:#5FAE7B;
       --danger:#E0655C; --ok:#5FAE7B;
-      --zone-green:#16261C; --zone-yellow:#2E2712; --zone-red:#2E1B18;
+      --zone-green:#1E4A2E; --zone-yellow:#5A420C; --zone-red:#5C231C;
       --axis:#3A414C;
       --shadow:0 1px 2px rgba(0,0,0,.35);
     }
@@ -40,7 +40,7 @@
     --st-backlog:#8996A3; --st-listo:#6E9CE0; --st-sprint:#E0AC42;
     --st-ejec:#E0824C; --st-hecho:#5FAE7B;
     --danger:#E0655C; --ok:#5FAE7B;
-    --zone-green:#16261C; --zone-yellow:#2E2712; --zone-red:#2E1B18;
+    --zone-green:#1E4A2E; --zone-yellow:#5A420C; --zone-red:#5C231C;
     --axis:#3A414C;
     --shadow:0 1px 2px rgba(0,0,0,.35);
   }
@@ -175,14 +175,7 @@
       <button class="tabbtn" data-tab="backlog">Backlog</button>
       <button class="tabbtn" data-tab="ccpm">Proyectos CCPM</button>
       <button class="tabbtn" data-tab="resumen">Resumen</button>
-      <div class="data-tools">
-        <button class="btn small" id="btn-export">⭳ Exportar JSON</button>
-        <button class="btn small" id="btn-import-trigger">⭱ Importar JSON</button>
-        <input type="file" id="file-import" accept="application/json" style="display:none">
-        <label class="chk"><input type="checkbox" id="chk-replace"> reemplazar todo</label>
-      </div>
     </nav>
-    <div class="status-line" id="status-line">Cargando datos guardados en este dispositivo…</div>
   </header>
 
   <div id="banner"></div>
@@ -271,6 +264,7 @@
         <div id="cp-tasks"></div>
       </div>
 
+      <div class="muted" id="cp-updated-line" style="font-size:11px;margin-bottom:8px;"></div>
       <div class="row between">
         <button type="button" class="btn danger" id="cp-delete" style="display:none;">Eliminar proyecto</button>
         <button type="button" class="btn primary" id="cp-save" style="margin-left:auto;">Guardar proyecto</button>
@@ -305,6 +299,18 @@
       <div class="muted" style="font-size:12px;margin-top:8px;">Índice de prioridad = Impacto ÷ Esfuerzo — qué alivia más la restricción por el menor esfuerzo.</div>
     </div>
   </section>
+
+  <footer class="panel" style="padding:16px;margin-top:24px;">
+    <div class="eyebrow" style="margin-bottom:8px;">Datos y respaldo</div>
+    <div class="status-line" id="status-line" style="margin-top:0;">Cargando datos guardados en este dispositivo…</div>
+    <div class="status-line" id="last-update-line" style="margin-top:2px;">Última actualización en este dispositivo: —</div>
+    <div class="data-tools" style="margin-left:0;margin-top:12px;">
+      <button class="btn small" id="btn-export">⭳ Exportar JSON</button>
+      <button class="btn small" id="btn-import-trigger">⭱ Importar JSON</button>
+      <input type="file" id="file-import" accept="application/json" style="display:none">
+      <label class="chk"><input type="checkbox" id="chk-replace"> reemplazar todo</label>
+    </div>
+  </footer>
 
 </div>
 
@@ -382,6 +388,7 @@
         <label>Notas</label>
         <textarea id="f-notas"></textarea>
       </div>
+      <div class="muted" id="f-updated-line" style="font-size:11px;margin-bottom:8px;"></div>
       <div class="modal-actions">
         <button type="button" class="btn danger" id="btn-delete" style="display:none;">Eliminar</button>
         <div class="row" style="margin-left:auto;">
@@ -557,6 +564,22 @@
   function todayISO(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0'); }
   function toDay(iso){ if(!iso) return null; var d = new Date(iso+"T00:00:00"); return d.getTime()/86400000; }
 
+  // ---------- last-update tracking ----------
+  var fmtUpdated = new Intl.DateTimeFormat('es-CO', {dateStyle:'medium', timeStyle:'short'});
+  function touchUpdated(){
+    var iso = new Date().toISOString();
+    try{ localStorage.setItem('bat_last_update', iso); }catch(e){}
+    renderLastUpdate();
+    return iso;
+  }
+  function renderLastUpdate(){
+    var el = document.getElementById('last-update-line');
+    if(!el) return;
+    var iso = null;
+    try{ iso = localStorage.getItem('bat_last_update'); }catch(e){}
+    el.textContent = 'Última actualización en este dispositivo: ' + (iso ? fmtUpdated.format(new Date(iso)) : 'sin cambios todavía');
+  }
+
   // ---------- state ----------
   var items = [];
   var projects = [];
@@ -666,6 +689,7 @@
     document.getElementById('cp-inicio').value = currentProject.dateStarted||'';
     document.getElementById('cp-vencimiento').value = currentProject.dateDue||'';
     document.getElementById('cp-delete').style.display = project ? 'inline-block' : 'none';
+    document.getElementById('cp-updated-line').textContent = (currentProject.updatedAt) ? ('Última edición: ' + fmtUpdated.format(new Date(currentProject.updatedAt))) : '';
     renderCpTasks();
     updateCpComputedDisplays();
 
@@ -770,6 +794,7 @@
       showBanner('Ponle un nombre al proyecto antes de guardar.', false);
       return;
     }
+    currentProject.updatedAt = touchUpdated();
     dbPutP(currentProject).then(afterProjectsChange).then(function(){
       showBanner('Proyecto CCPM guardado.', true);
     }).catch(function(err){ showBanner('No se pudo guardar: '+err.message, false); });
@@ -780,10 +805,11 @@
     dbDeleteP(pid).then(function(){
       var linked = backlogItemForProject(pid);
       if(linked){
-        var merged = Object.assign({}, linked, {ccpmProjectId:null});
+        var merged = Object.assign({}, linked, {ccpmProjectId:null, updatedAt:new Date().toISOString()});
         return dbPut(merged).then(afterItemsChange);
       }
     }).then(afterProjectsChange).then(function(){
+      touchUpdated();
       backToCcpmList();
       showBanner('Proyecto eliminado.', true);
     }).catch(function(err){ showBanner('No se pudo eliminar: '+err.message, false); });
@@ -1046,12 +1072,13 @@
       var newProj = {
         id:genId(), backlogId:item.id,
         nombreProyecto:item.iniciativa, nombreIniciativa:item.iniciativa, objetivo:item.causa||'', indicador:'',
-        dateStarted:todayISO(), dateDue:'', tasks:[], createdAt:Date.now()
+        dateStarted:todayISO(), dateDue:'', tasks:[], createdAt:Date.now(), updatedAt:new Date().toISOString()
       };
       dbPutP(newProj).then(function(){
-        var merged = Object.assign({}, item, {ccpmProjectId:newProj.id});
+        var merged = Object.assign({}, item, {ccpmProjectId:newProj.id, updatedAt:new Date().toISOString()});
         return dbPut(merged);
       }).then(function(){
+        touchUpdated();
         return Promise.all([afterItemsChange(), afterProjectsChange()]);
       }).then(function(){
         closeModal();
@@ -1071,6 +1098,7 @@
     document.getElementById('f-esfuerzo').value = item && item.esfuerzo ? item.esfuerzo : '';
     document.getElementById('f-estado').value = item ? (item.estado||'Backlog') : 'Backlog';
     document.getElementById('f-notas').value = item ? (item.notas||'') : '';
+    document.getElementById('f-updated-line').textContent = (item && item.updatedAt) ? ('Última edición: ' + fmtUpdated.format(new Date(item.updatedAt))) : '';
     formSprintAssigned = !!(item && item.sprint);
     formSprint = (item && item.sprint) ? item.sprint : currentSprint;
     updateFormSprintLabel();
@@ -1095,7 +1123,7 @@
   document.getElementById('btn-delete').onclick = function(){
     if(!editingId) return;
     if(!confirm('¿Eliminar esta iniciativa?')) return;
-    dbDelete(editingId).then(afterItemsChange).then(closeModal).catch(function(e){ showBanner('No se pudo eliminar: '+e.message, false); });
+    dbDelete(editingId).then(afterItemsChange).then(touchUpdated).then(closeModal).catch(function(e){ showBanner('No se pudo eliminar: '+e.message, false); });
   };
 
   document.getElementById('item-form').addEventListener('submit', function(e){
@@ -1111,7 +1139,8 @@
       esfuerzo: document.getElementById('f-esfuerzo').value ? +document.getElementById('f-esfuerzo').value : null,
       estado: estado,
       sprint: formSprintAssigned ? formSprint : null,
-      notas: document.getElementById('f-notas').value.trim()
+      notas: document.getElementById('f-notas').value.trim(),
+      updatedAt: new Date().toISOString()
     };
     if(estado === 'Listo' && !(prevItem && prevItem.fechaListo)){
       data.fechaListo = todayISO();
@@ -1121,13 +1150,13 @@
 
     if(editingId){
       var merged = Object.assign({}, prevItem, data, {id: editingId});
-      dbPut(merged).then(afterItemsChange).then(closeModal).catch(function(err){ showBanner('No se pudo guardar: '+err.message, false); });
+      dbPut(merged).then(afterItemsChange).then(touchUpdated).then(closeModal).catch(function(err){ showBanner('No se pudo guardar: '+err.message, false); });
     } else {
       data.id = genId();
       data.codigo = 'BK-' + String(items.length+1).padStart(3,'0');
       data.fechaIngreso = todayISO();
       data.createdAt = Date.now();
-      dbPut(data).then(afterItemsChange).then(closeModal).catch(function(err){ showBanner('No se pudo guardar: '+err.message, false); });
+      dbPut(data).then(afterItemsChange).then(touchUpdated).then(closeModal).catch(function(err){ showBanner('No se pudo guardar: '+err.message, false); });
     }
   });
 
@@ -1171,7 +1200,7 @@
         return Promise.all([dbGetAll(), dbGetAllP()]);
       }).then(function(res){
         items = res[0]; projects = res[1];
-        renderAll(); updateStatusLine();
+        renderAll(); updateStatusLine(); touchUpdated();
         showBanner((replace ? 'Reemplazado con ' : 'Combinado — ') + incomingItems.length + ' iniciativas y ' + incomingProjects.length + ' proyectos importados.', true);
       }).catch(function(err){ showBanner('Error importando: '+err.message, false); });
     };
@@ -1204,6 +1233,7 @@
 
   // ---------- boot ----------
   renderFilters();
+  renderLastUpdate();
   renderAll();
 
   afterItemsChange().then(function(){
