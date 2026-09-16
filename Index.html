@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Backlog Área Técnica — Coditeq</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16233B; --ink-soft:#4A5568; --muted:#7C8794;
+    --paper:#F3F4F0; --surface:#FFFFFF; --surface-2:#ECEDE8;
+    --border:#DADFE1; --accent:#BC5B2A; --accent-soft:#F3E3D8;
+    --st-backlog:#94A0AD; --st-listo:#3F6FB5; --st-sprint:#C98A12;
+    --st-ejec:#BC5B2A; --st-hecho:#3D7A52;
+    --danger:#B3423B; --ok:#3D7A52;
+    --zone-green:#E3EEE6; --zone-yellow:#F7ECD2; --zone-red:#F3DEDB;
+    --axis:#B7BEC3;
+    --radius:3px;
+    --shadow:0 1px 2px rgba(22,35,59,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#ECEEF1; --ink-soft:#C7CDD4; --muted:#8E98A3;
+      --paper:#0F1318; --surface:#171B21; --surface-2:#1E232B;
+      --border:#2B313A; --accent:#E0824C; --accent-soft:#3A2A20;
+      --st-backlog:#8996A3; --st-listo:#6E9CE0; --st-sprint:#E0AC42;
+      --st-ejec:#E0824C; --st-hecho:#5FAE7B;
+      --danger:#E0655C; --ok:#5FAE7B;
+      --zone-green:#16261C; --zone-yellow:#2E2712; --zone-red:#2E1B18;
+      --axis:#3A414C;
+      --shadow:0 1px 2px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#ECEEF1; --ink-soft:#C7CDD4; --muted:#8E98A3;
+    --paper:#0F1318; --surface:#171B21; --surface-2:#1E232B;
+    --border:#2B313A; --accent:#E0824C; --accent-soft:#3A2A20;
+    --st-backlog:#8996A3; --st-listo:#6E9CE0; --st-sprint:#E0AC42;
+    --st-ejec:#E0824C; --st-hecho:#5FAE7B;
+    --danger:#E0655C; --ok:#5FAE7B;
+    --zone-green:#16261C; --zone-yellow:#2E2712; --zone-red:#2E1B18;
+    --axis:#3A414C;
+    --shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:14px; line-height:1.45;
+    -webkit-tap-highlight-color:transparent;
+  }
+  code, .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;}
+  #app{max-width:1040px;margin:0 auto;padding:0 16px 64px;}
+
+  header.top{padding:20px 0 12px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+  .eyebrow{font-size:12px;color:var(--muted);letter-spacing:.02em;}
+  h1{font-size:20px;font-weight:600;margin:2px 0 14px;letter-spacing:-.01em;}
+  nav.tabs{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+  nav.tabs button.tabbtn{
+    font-family:inherit;font-size:13.5px;font-weight:500;color:var(--muted);
+    background:none;border:none;border-bottom:2px solid transparent;
+    padding:8px 4px;margin-right:18px;cursor:pointer;
+  }
+  nav.tabs button.tabbtn.active{color:var(--ink);border-bottom-color:var(--accent);}
+  .data-tools{display:flex;gap:8px;margin-left:auto;align-items:center;}
+  .data-tools label.chk{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
+  .muted{color:var(--muted);}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .between{justify-content:space-between;}
+  button.btn{
+    font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;
+    padding:8px 14px;border-radius:var(--radius);border:1px solid var(--border);
+    background:var(--surface);color:var(--ink);
+  }
+  button.btn.primary{background:var(--ink);color:var(--surface);border-color:var(--ink);}
+  button.btn.accent{background:var(--accent);color:#fff;border-color:var(--accent);}
+  button.btn.ghost{border-color:transparent;background:none;}
+  button.btn.danger{color:var(--danger);border-color:var(--danger);background:none;}
+  button.btn.small{padding:6px 10px;font-size:12px;}
+  button.icon-btn{
+    width:30px;height:30px;border-radius:var(--radius);border:1px solid var(--border);
+    background:var(--surface);color:var(--ink);font-size:15px;cursor:pointer;
+  }
+  .pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:2px;color:#fff;}
+
+  .sprint-head{padding:16px;margin-bottom:16px;}
+  .sprint-nav{display:flex;align-items:center;gap:12px;}
+  .sprint-label{font-size:16px;font-weight:600;min-width:180px;text-align:center;}
+  .sprint-range{font-size:12.5px;color:var(--muted);text-align:center;}
+  .metrics{display:flex;gap:22px;margin-top:14px;flex-wrap:wrap;}
+  .metric .n{font-family:"IBM Plex Mono";font-size:22px;font-weight:600;}
+  .metric .l{font-size:11.5px;color:var(--muted);}
+
+  .lanes{display:grid;grid-template-columns:1fr;gap:14px;}
+  @media(min-width:760px){.lanes{grid-template-columns:1fr 1fr 1fr;}}
+  .lane h3{font-size:12px;font-weight:600;color:var(--ink-soft);display:flex;align-items:center;gap:8px;margin:0 0 8px;}
+  .lane h3 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .lane .count{margin-left:auto;font-family:"IBM Plex Mono";color:var(--muted);}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--st-backlog);
+    border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow);
+  }
+  .card .title{font-weight:500;font-size:13.5px;margin-bottom:4px;}
+  .card .meta{font-size:11.5px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;}
+  .empty-slot{font-size:12px;color:var(--muted);padding:8px 0;font-style:italic;}
+
+  .filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  select.chip, input.chip{
+    font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--border);
+    border-radius:var(--radius);background:var(--surface);color:var(--ink);
+  }
+  .idx{font-family:"IBM Plex Mono";font-size:12px;color:var(--ink-soft);}
+
+  .bars{display:flex;flex-direction:column;gap:10px;margin:16px 0;}
+  .bar-row{display:grid;grid-template-columns:150px 1fr 34px;align-items:center;gap:10px;}
+  .bar-row .label{font-size:12.5px;}
+  .bar-track{height:10px;background:var(--surface-2);border-radius:2px;overflow:hidden;}
+  .bar-fill{height:100%;}
+  .bar-row .n{font-family:"IBM Plex Mono";font-size:12.5px;text-align:right;}
+  .legend-item{display:flex;gap:8px;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;align-items:flex-start;}
+  .legend-item .dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none;}
+
+  section.view{display:none;}
+  section.view.active{display:block;}
+
+  .overlay{position:fixed;inset:0;background:rgba(10,14,20,.45);display:none;align-items:flex-end;justify-content:center;z-index:50;}
+  @media(min-width:640px){.overlay{align-items:center;}}
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--surface);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;
+    border-radius:var(--radius) var(--radius) 0 0;padding:20px;border:1px solid var(--border);
+  }
+  @media(min-width:640px){.modal{border-radius:var(--radius);}}
+  .modal h2{font-size:16px;margin:0 0 16px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
+  .field input, .field select, .field textarea{
+    width:100%;font-family:inherit;font-size:14px;padding:8px 10px;
+    border:1px solid var(--border);border-radius:var(--radius);background:var(--paper);color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:56px;}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+  .sprint-picker{display:flex;align-items:center;gap:8px;}
+  .sprint-picker span{font-family:"IBM Plex Mono";font-size:13px;min-width:82px;text-align:center;}
+  .modal-actions{display:flex;justify-content:space-between;margin-top:18px;gap:10px;}
+
+  .banner{font-size:12.5px;padding:8px 12px;border-radius:var(--radius);margin-bottom:14px;
+    background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);}
+  .banner.ok{background:transparent;color:var(--ok);border-color:var(--ok);}
+  .status-line{font-size:11.5px;color:var(--muted);margin-top:10px;}
+  ::selection{background:var(--accent-soft);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <div class="eyebrow">Área Técnica · Coditeq</div>
+    <h1>Backlog &amp; Sprint Board — Formación Técnica</h1>
+    <nav class="tabs">
+      <button class="tabbtn active" data-tab="sprint">Sprint</button>
+      <button class="tabbtn" data-tab="backlog">Backlog</button>
+      <button class="tabbtn" data-tab="resumen">Resumen</button>
+      <div class="data-tools">
+        <button class="btn small" id="btn-export">⭳ Exportar JSON</button>
+        <button class="btn small" id="btn-import-trigger">⭱ Importar JSON</button>
+        <input type="file" id="file-import" accept="application/json" style="display:none">
+        <label class="chk"><input type="checkbox" id="chk-replace"> reemplazar todo</label>
+      </div>
+    </nav>
+    <div class="status-line" id="status-line">Cargando datos guardados en este dispositivo…</div>
+  </header>
+
+  <div id="banner"></div>
+
+  <section class="view active" id="view-sprint">
+    <div class="panel sprint-head">
+      <div class="sprint-nav">
+        <button class="icon-btn" id="sprint-prev">‹</button>
+        <div style="flex:1">
+          <div class="sprint-label" id="sprint-label">—</div>
+          <div class="sprint-range" id="sprint-range">—</div>
+        </div>
+        <button class="icon-btn" id="sprint-next">›</button>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="n" id="m-sprint">0</div><div class="l">En sprint</div></div>
+        <div class="metric"><div class="n" id="m-ejec">0</div><div class="l">En ejecución (CCPM)</div></div>
+        <div class="metric"><div class="n" id="m-hecho">0</div><div class="l">Hecho</div></div>
+        <div class="metric"><div class="n" id="m-through">—</div><div class="l">Throughput</div></div>
+      </div>
+    </div>
+
+    <div class="lanes">
+      <div class="lane">
+        <h3><span class="dot" style="background:var(--st-sprint)"></span>En sprint (por iniciar)<span class="count" id="c-sprint">0</span></h3>
+        <div id="lane-sprint"></div>
+      </div>
+      <div class="lane">
+        <h3><span class="dot" style="background:var(--st-ejec)"></span>En ejecución (CCPM)<span class="count" id="c-ejec">0</span></h3>
+        <div id="lane-ejec"></div>
+      </div>
+      <div class="lane">
+        <h3><span class="dot" style="background:var(--st-hecho)"></span>Hecho<span class="count" id="c-hecho">0</span></h3>
+        <div id="lane-hecho"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-backlog">
+    <div class="row between" style="margin-bottom:14px;">
+      <div class="filters" id="filters"></div>
+      <button class="btn accent" id="btn-new">+ Nueva iniciativa</button>
+    </div>
+    <div class="blist" id="backlog-list"></div>
+  </section>
+
+  <section class="view" id="view-resumen">
+    <div class="panel" style="padding:16px;margin-bottom:16px;">
+      <div class="eyebrow" style="margin-bottom:2px;">Fever chart — Backlog</div>
+      <div class="muted" style="font-size:12px;margin-bottom:10px;">% Avance vs. % Buffer consumido, misma lógica del fever chart del Excel — aquí el reloj corre desde que la iniciativa entra al backlog, no solo en ejecución.</div>
+      <div id="fever-chart"></div>
+      <div class="row" id="fever-legend" style="margin-top:10px;gap:16px;font-size:11.5px;color:var(--ink-soft);"></div>
+      <div class="muted" id="fever-note" style="font-size:11.5px;margin-top:6px;"></div>
+    </div>
+
+    <div class="panel" style="padding:16px;margin-bottom:16px;">
+      <div class="eyebrow" style="margin-bottom:10px;">Estado del backlog general</div>
+      <div class="bars" id="resumen-bars"></div>
+      <div class="muted" style="font-size:12px;margin-top:4px;">Frente activo hoy: Formación Técnica. La estructura ya soporta Reestructuración, Conectividad, Comercial y Herramientas Internas cuando quieras escalar.</div>
+    </div>
+
+    <div class="panel" style="padding:16px;margin-bottom:16px;">
+      <div class="eyebrow" style="margin-bottom:10px;">Siguiente en la fila (mayor índice, aún sin sprint)</div>
+      <div class="top3" id="top3"></div>
+    </div>
+
+    <div class="panel" style="padding:16px;">
+      <div class="eyebrow" style="margin-bottom:10px;">Leyenda de estados</div>
+      <div id="legend"></div>
+      <div class="muted" style="font-size:12px;margin-top:8px;">Índice de prioridad = Impacto ÷ Esfuerzo — qué alivia más la restricción por el menor esfuerzo.</div>
+    </div>
+  </section>
+
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modal-title">Nueva iniciativa</h2>
+    <form id="item-form">
+      <div class="field">
+        <label>Iniciativa / ítem</label>
+        <input type="text" id="f-iniciativa" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Frente</label>
+          <select id="f-frente">
+            <option>Formación</option>
+            <option>Reestructuración</option>
+            <option>Conectividad</option>
+            <option>Comercial</option>
+            <option>Herramientas Internas</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Responsable</label>
+          <input type="text" id="f-responsable">
+        </div>
+      </div>
+      <div class="field">
+        <label>Problema / causa raíz</label>
+        <textarea id="f-causa"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Impacto (1-5)</label>
+          <select id="f-impacto">
+            <option value="">—</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Esfuerzo (días)</label>
+          <input type="number" id="f-esfuerzo" min="0" step="0.5">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Estado</label>
+          <select id="f-estado">
+            <option>Backlog</option>
+            <option>Listo</option>
+            <option>En Sprint</option>
+            <option>En Ejecución (CCPM)</option>
+            <option>Hecho</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Sprint asignado</label>
+          <div class="sprint-picker">
+            <button type="button" class="icon-btn" id="f-sprint-prev">‹</button>
+            <span id="f-sprint-label">—</span>
+            <button type="button" class="icon-btn" id="f-sprint-next">›</button>
+            <button type="button" class="btn ghost" id="f-sprint-clear" style="font-size:11.5px;padding:4px 8px;">quitar</button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Proyecto CCPM vinculado</label>
+        <input type="text" id="f-ccpm" placeholder="p. ej. nombre de la pestaña del Excel una vez creada">
+      </div>
+      <div class="field">
+        <label>Notas</label>
+        <textarea id="f-notas"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn danger" id="btn-delete" style="display:none;">Eliminar</button>
+        <div class="row" style="margin-left:auto;">
+          <button type="button" class="btn ghost" id="btn-cancel">Cancelar</button>
+          <button type="submit" class="btn primary">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STATE_COLORS = {
+    "Backlog":"var(--st-backlog)", "Listo":"var(--st-listo)", "En Sprint":"var(--st-sprint)",
+    "En Ejecución (CCPM)":"var(--st-ejec)", "Hecho":"var(--st-hecho)"
+  };
+  var STATE_ORDER = ["Backlog","Listo","En Sprint","En Ejecución (CCPM)","Hecho"];
+
+  // ---------- IndexedDB layer ----------
+  var DB_NAME = 'backlog-area-tecnica';
+  var DB_VERSION = 1;
+  var STORE = 'items';
+
+  function openDB(){
+    return new Promise(function(resolve, reject){
+      var req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function(e){
+        var idb = e.target.result;
+        if(!idb.objectStoreNames.contains(STORE)){
+          idb.createObjectStore(STORE, {keyPath:'id'});
+        }
+      };
+      req.onsuccess = function(e){ resolve(e.target.result); };
+      req.onerror = function(e){ reject(e.target.error); };
+    });
+  }
+  var dbPromise = openDB();
+
+  function dbGetAll(){
+    return dbPromise.then(function(idb){
+      return new Promise(function(resolve, reject){
+        var tx = idb.transaction(STORE,'readonly');
+        var req = tx.objectStore(STORE).getAll();
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ reject(req.error); };
+      });
+    });
+  }
+  function dbPut(item){
+    return dbPromise.then(function(idb){
+      return new Promise(function(resolve, reject){
+        var tx = idb.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).put(item);
+        tx.oncomplete = function(){ resolve(item); };
+        tx.onerror = function(){ reject(tx.error); };
+      });
+    });
+  }
+  function dbBulkPut(arr){
+    return dbPromise.then(function(idb){
+      return new Promise(function(resolve, reject){
+        var tx = idb.transaction(STORE,'readwrite');
+        var store = tx.objectStore(STORE);
+        arr.forEach(function(it){ if(it && it.id) store.put(it); });
+        tx.oncomplete = function(){ resolve(); };
+        tx.onerror = function(){ reject(tx.error); };
+      });
+    });
+  }
+  function dbDelete(id){
+    return dbPromise.then(function(idb){
+      return new Promise(function(resolve, reject){
+        var tx = idb.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).delete(id);
+        tx.oncomplete = function(){ resolve(); };
+        tx.onerror = function(){ reject(tx.error); };
+      });
+    });
+  }
+  function dbClear(){
+    return dbPromise.then(function(idb){
+      return new Promise(function(resolve, reject){
+        var tx = idb.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).clear();
+        tx.oncomplete = function(){ resolve(); };
+        tx.onerror = function(){ reject(tx.error); };
+      });
+    });
+  }
+  function genId(){ return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+  // ---------- quincena helpers ----------
+  function idxFromId(id){
+    var y = +id.slice(0,4), m = +id.slice(5,7)-1, half = id.slice(7)==='B'?1:0;
+    return y*24 + m*2 + half;
+  }
+  function dateFromIdx(idx){
+    var y = Math.floor(idx/24), rem = idx - y*24;
+    var m = Math.floor(rem/2), half = rem%2===0 ? 1 : 16;
+    return new Date(y, m, half);
+  }
+  function quincenaOf(date){
+    var y=date.getFullYear(), m=date.getMonth(), d=date.getDate();
+    var half = d<=15?'A':'B';
+    var start = new Date(y,m, half==='A'?1:16);
+    var end = half==='A'? new Date(y,m,15) : new Date(y,m+1,0);
+    var id = y + "-" + String(m+1).padStart(2,'0') + half;
+    return {id:id, start:start, end:end};
+  }
+  function shiftId(id, delta){ return quincenaOf(dateFromIdx(idxFromId(id)+delta)).id; }
+  function idInfo(id){ return quincenaOf(dateFromIdx(idxFromId(id))); }
+  var fmtDay = new Intl.DateTimeFormat('es-CO', {day:'numeric', month:'short'});
+  var fmtDayY = new Intl.DateTimeFormat('es-CO', {day:'numeric', month:'short', year:'numeric'});
+  function rangeLabel(info){ return fmtDay.format(info.start) + " – " + fmtDayY.format(info.end); }
+  function todayISO(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0'); }
+
+  // ---------- state ----------
+  var items = [];
+  var currentSprint = quincenaOf(new Date()).id;
+  var editingId = null;
+  var formSprint = currentSprint;
+  var formSprintAssigned = false;
+  var filterFrente = "";
+  var filterEstado = "";
+
+  function idx(item){
+    if(!item.impacto || !item.esfuerzo) return null;
+    return item.impacto / item.esfuerzo;
+  }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+
+  // ---------- render: sprint tab ----------
+  function renderSprint(){
+    var info = idInfo(currentSprint);
+    document.getElementById('sprint-label').textContent = currentSprint;
+    document.getElementById('sprint-range').textContent = rangeLabel(info);
+
+    var inSprint = items.filter(function(i){ return i.sprint === currentSprint; });
+    var lanes = {"En Sprint":[], "En Ejecución (CCPM)":[], "Hecho":[]};
+    inSprint.forEach(function(i){ if(lanes[i.estado]) lanes[i.estado].push(i); });
+
+    fillLane('lane-sprint', lanes["En Sprint"]);
+    fillLane('lane-ejec', lanes["En Ejecución (CCPM)"]);
+    fillLane('lane-hecho', lanes["Hecho"]);
+    document.getElementById('c-sprint').textContent = lanes["En Sprint"].length;
+    document.getElementById('c-ejec').textContent = lanes["En Ejecución (CCPM)"].length;
+    document.getElementById('c-hecho').textContent = lanes["Hecho"].length;
+    document.getElementById('m-sprint').textContent = lanes["En Sprint"].length;
+    document.getElementById('m-ejec').textContent = lanes["En Ejecución (CCPM)"].length;
+    document.getElementById('m-hecho').textContent = lanes["Hecho"].length;
+    var total = lanes["En Sprint"].length + lanes["En Ejecución (CCPM)"].length + lanes["Hecho"].length;
+    document.getElementById('m-through').textContent = total ? Math.round(100*lanes["Hecho"].length/total)+"%" : "—";
+  }
+  function fillLane(elId, list){
+    var el = document.getElementById(elId);
+    el.innerHTML = "";
+    if(!list.length){ el.innerHTML = '<div class="empty-slot">Vacío</div>'; return; }
+    list.forEach(function(item){ el.appendChild(itemCard(item)); });
+  }
+  function itemCard(item){
+    var c = document.createElement('div');
+    c.className = 'card';
+    c.style.borderLeftColor = STATE_COLORS[item.estado] || 'var(--st-backlog)';
+    var meta = [];
+    if(item.codigo) meta.push('<span class="mono">'+item.codigo+'</span>');
+    if(item.responsable) meta.push(esc(item.responsable));
+    if(item.frente) meta.push(esc(item.frente));
+    c.innerHTML = '<div class="title">'+esc(item.iniciativa||'(sin título)')+'</div><div class="meta">'+meta.join(' · ')+'</div>';
+    c.addEventListener('click', function(){ openModal(item); });
+    return c;
+  }
+
+  // ---------- render: backlog tab ----------
+  function renderFilters(){
+    var el = document.getElementById('filters');
+    el.innerHTML =
+      '<select class="chip" id="ff-frente"><option value="">Todos los frentes</option>' +
+      ['Formación','Reestructuración','Conectividad','Comercial','Herramientas Internas','Otro']
+        .map(function(f){return '<option '+(f===filterFrente?'selected':'')+'>'+f+'</option>';}).join('') +
+      '</select>' +
+      '<select class="chip" id="ff-estado"><option value="">Todos los estados</option>' +
+      STATE_ORDER.map(function(s){return '<option '+(s===filterEstado?'selected':'')+'>'+s+'</option>';}).join('') +
+      '</select>';
+    document.getElementById('ff-frente').onchange = function(e){ filterFrente = e.target.value; renderBacklog(); };
+    document.getElementById('ff-estado').onchange = function(e){ filterEstado = e.target.value; renderBacklog(); };
+  }
+  function renderBacklog(){
+    var el = document.getElementById('backlog-list');
+    el.innerHTML = "";
+    var list = items.slice();
+    if(filterFrente) list = list.filter(function(i){return i.frente===filterFrente;});
+    if(filterEstado) list = list.filter(function(i){return i.estado===filterEstado;});
+    list.sort(function(a,b){
+      var ia = idx(a), ib = idx(b);
+      if(ia===null && ib===null) return (b.createdAt||0)-(a.createdAt||0);
+      if(ia===null) return 1;
+      if(ib===null) return -1;
+      return ib-ia;
+    });
+    if(!list.length){ el.innerHTML = '<div class="empty-slot">No hay iniciativas con estos filtros.</div>'; return; }
+    list.forEach(function(item){
+      var c = document.createElement('div');
+      c.className='card';
+      c.style.borderLeftColor = STATE_COLORS[item.estado] || 'var(--st-backlog)';
+      var i = idx(item);
+      var metaBits = [];
+      if(item.codigo) metaBits.push('<span class="mono">'+item.codigo+'</span>');
+      metaBits.push('<span class="pill" style="background:'+(STATE_COLORS[item.estado]||'#999')+'">'+esc(item.estado)+'</span>');
+      if(item.frente) metaBits.push(esc(item.frente));
+      if(item.responsable) metaBits.push(esc(item.responsable));
+      if(item.sprint) metaBits.push(item.sprint);
+      c.innerHTML =
+        '<div class="row between">'+
+          '<div class="title">'+esc(item.iniciativa||'(sin título)')+'</div>'+
+          '<div class="idx">'+(i!==null? i.toFixed(2):'—')+'</div>'+
+        '</div>'+
+        '<div class="meta" style="margin-top:4px;">'+metaBits.join(' · ')+'</div>' +
+        (item.causa ? '<div class="muted" style="font-size:12px;margin-top:6px;">'+esc(item.causa)+'</div>' : '');
+      c.addEventListener('click', function(){ openModal(item); });
+      el.appendChild(c);
+    });
+  }
+
+  // ---------- render: fever chart ----------
+  var ESTADO_PROGRESS = {"Backlog":0, "Listo":0.15, "En Sprint":0.4, "En Ejecución (CCPM)":0.7};
+  var ZONE_COLORS = {green:"var(--zone-green)", yellow:"var(--zone-yellow)", red:"var(--zone-red)"};
+  function feverPoint(item){
+    if(item.estado === 'Hecho') return null; // ya cerrado, sale del fever chart activo
+    if(!item.esfuerzo || item.esfuerzo <= 0 || !item.fechaIngreso) return null;
+    var start = new Date(item.fechaIngreso+"T00:00:00");
+    var now = new Date();
+    var daysElapsed = Math.max(0, (now - start) / 86400000);
+    var pComplete = ESTADO_PROGRESS[item.estado] != null ? ESTADO_PROGRESS[item.estado] : 0;
+    var pTime = daysElapsed / item.esfuerzo;
+    var buffer = 2 * (pTime - pComplete);
+    return {x: pComplete*100, y: buffer*100, item: item};
+  }
+  function svgEl(tag, attrs){
+    var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for(var k in attrs){ el.setAttribute(k, attrs[k]); }
+    return el;
+  }
+  function renderFever(){
+    var host = document.getElementById('fever-chart');
+    host.innerHTML = "";
+    var withEffort = items.filter(function(i){ return i.estado !== 'Hecho'; });
+    var pts = withEffort.map(feverPoint).filter(Boolean);
+    var skipped = withEffort.length - pts.length;
+
+    var W=600, H=320, padL=46, padR=16, padT=14, padB=36;
+    var plotW=W-padL-padR, plotH=H-padT-padB;
+    var yMin=-20, yMax=150;
+    function sx(x){ return padL + (Math.max(0,Math.min(100,x))/100)*plotW; }
+    function sy(y){ var yy=Math.max(yMin,Math.min(yMax,y)); return padT + (1-(yy-yMin)/(yMax-yMin))*plotH; }
+
+    var svg = svgEl('svg', {viewBox:'0 0 '+W+' '+H, width:'100%', preserveAspectRatio:'xMinYMin meet'});
+    svg.style.maxWidth = '620px';
+    svg.style.display = 'block';
+
+    // zone bands
+    svg.appendChild(svgEl('rect', {x:padL, y:sy(33), width:plotW, height:(sy(yMin)-sy(33)), fill:ZONE_COLORS.green}));
+    svg.appendChild(svgEl('rect', {x:padL, y:sy(66), width:plotW, height:(sy(33)-sy(66)), fill:ZONE_COLORS.yellow}));
+    svg.appendChild(svgEl('rect', {x:padL, y:sy(yMax), width:plotW, height:(sy(66)-sy(yMax)), fill:ZONE_COLORS.red}));
+
+    // axes
+    svg.appendChild(svgEl('line', {x1:padL, y1:sy(yMin), x2:padL, y2:sy(yMax), stroke:'var(--axis)', 'stroke-width':1}));
+    svg.appendChild(svgEl('line', {x1:padL, y1:sy(0), x2:W-padR, y2:sy(0), stroke:'var(--axis)', 'stroke-width':1, 'stroke-dasharray':'2,3'}));
+
+    [0,25,50,75,100].forEach(function(v){
+      var t = svgEl('text', {x:sx(v), y:H-padB+16, 'font-size':10, fill:'var(--muted)', 'text-anchor':'middle', 'font-family':'IBM Plex Mono'});
+      t.textContent = v+'%';
+      svg.appendChild(t);
+    });
+    [0,33,66,100].forEach(function(v){
+      var t = svgEl('text', {x:padL-8, y:sy(v)+3, 'font-size':10, fill:'var(--muted)', 'text-anchor':'end', 'font-family':'IBM Plex Mono'});
+      t.textContent = v+'%';
+      svg.appendChild(t);
+    });
+    var xl = svgEl('text', {x:padL+plotW/2, y:H-4, 'font-size':11, fill:'var(--ink-soft)', 'text-anchor':'middle'});
+    xl.textContent = '% Avance (por estado)';
+    svg.appendChild(xl);
+    var yl = svgEl('text', {x:14, y:padT+plotH/2, 'font-size':11, fill:'var(--ink-soft)', 'text-anchor':'middle',
+                            transform:'rotate(-90 14 '+(padT+plotH/2)+')'});
+    yl.textContent = '% Buffer consumido';
+    svg.appendChild(yl);
+
+    pts.forEach(function(p){
+      var cx = sx(p.x), cy = sy(p.y);
+      var c = svgEl('circle', {cx:cx, cy:cy, r:6, fill:STATE_COLORS[p.item.estado]||'var(--st-backlog)',
+                                stroke:'var(--surface)', 'stroke-width':1.5, style:'cursor:pointer'});
+      var title = svgEl('title', {});
+      title.textContent = p.item.iniciativa + ' — ' + p.item.estado + ' (' + Math.round(p.x) + '% avance, ' + Math.round(p.y) + '% buffer)';
+      c.appendChild(title);
+      c.addEventListener('click', function(){ openModal(p.item); });
+      svg.appendChild(c);
+    });
+
+    host.appendChild(svg);
+
+    document.getElementById('fever-legend').innerHTML =
+      '<span><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--zone-green);border:1px solid var(--ok);margin-right:4px;"></span>En control</span>' +
+      '<span><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--zone-yellow);border:1px solid var(--st-sprint);margin-right:4px;"></span>Vigilar</span>' +
+      '<span><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--zone-red);border:1px solid var(--danger);margin-right:4px;"></span>Actuar ya</span>';
+
+    var note = "";
+    if(!pts.length){ note = "Nada que graficar todavía — asigna esfuerzo (días) a tus iniciativas activas para verlas aquí."; }
+    else if(skipped){ note = skipped + " iniciativa(s) sin esfuerzo estimado no aparece(n) en el gráfico."; }
+    document.getElementById('fever-note').textContent = note;
+  }
+
+  // ---------- render: resumen tab ----------
+  function renderResumen(){
+    var counts = {}; STATE_ORDER.forEach(function(s){counts[s]=0;});
+    items.forEach(function(i){ if(counts[i.estado]!==undefined) counts[i.estado]++; });
+    var max = Math.max(1, Math.max.apply(null, STATE_ORDER.map(function(s){return counts[s];})));
+    var el = document.getElementById('resumen-bars');
+    el.innerHTML = STATE_ORDER.map(function(s){
+      return '<div class="bar-row"><div class="label">'+s+'</div>'+
+        '<div class="bar-track"><div class="bar-fill" style="width:'+(100*counts[s]/max)+'%;background:'+STATE_COLORS[s]+'"></div></div>'+
+        '<div class="n">'+counts[s]+'</div></div>';
+    }).join('');
+
+    var candidates = items.filter(function(i){ return !i.sprint && i.estado!=='Hecho' && idx(i)!==null; });
+    candidates.sort(function(a,b){ return idx(b)-idx(a); });
+    var top3el = document.getElementById('top3');
+    top3el.innerHTML = "";
+    if(!candidates.length){ top3el.innerHTML = '<div class="empty-slot">Nada priorizable todavía — asigna impacto y esfuerzo a tus iniciativas en Backlog.</div>'; }
+    candidates.slice(0,3).forEach(function(item){ top3el.appendChild(itemCard(item)); });
+
+    var legendEl = document.getElementById('legend');
+    var legendText = {
+      "Backlog":"idea capturada, aún sin evaluar",
+      "Listo":"causa raíz clara + responsable + esfuerzo estimado (Definition of Ready)",
+      "En Sprint":"seleccionado para el ciclo quincenal actual",
+      "En Ejecución (CCPM)":"ya tiene pestaña de proyecto con fecha comprometida y buffer",
+      "Hecho":"completado"
+    };
+    legendEl.innerHTML = STATE_ORDER.map(function(s){
+      return '<div class="legend-item"><span class="dot" style="background:'+STATE_COLORS[s]+'"></span><div><b>'+s+'</b> — '+legendText[s]+'</div></div>';
+    }).join('');
+  }
+
+  function renderAll(){ renderSprint(); renderBacklog(); renderResumen(); renderFever(); }
+  function refresh(){
+    return dbGetAll().then(function(all){
+      items = all;
+      renderAll();
+      document.getElementById('status-line').textContent =
+        'Datos guardados en este dispositivo (IndexedDB) — ' + items.length + ' iniciativas. Usa Exportar/Importar JSON para llevarlos a otro dispositivo.';
+    });
+  }
+
+  // ---------- modal ----------
+  function openModal(item){
+    editingId = item ? item.id : null;
+    document.getElementById('modal-title').textContent = item ? 'Editar iniciativa' : 'Nueva iniciativa';
+    document.getElementById('f-iniciativa').value = item ? (item.iniciativa||'') : '';
+    document.getElementById('f-frente').value = item ? (item.frente||'Formación') : 'Formación';
+    document.getElementById('f-responsable').value = item ? (item.responsable||'') : '';
+    document.getElementById('f-causa').value = item ? (item.causa||'') : '';
+    document.getElementById('f-impacto').value = item && item.impacto ? item.impacto : '';
+    document.getElementById('f-esfuerzo').value = item && item.esfuerzo ? item.esfuerzo : '';
+    document.getElementById('f-estado').value = item ? (item.estado||'Backlog') : 'Backlog';
+    document.getElementById('f-ccpm').value = item ? (item.ccpm||'') : '';
+    document.getElementById('f-notas').value = item ? (item.notas||'') : '';
+    formSprintAssigned = !!(item && item.sprint);
+    formSprint = (item && item.sprint) ? item.sprint : currentSprint;
+    updateFormSprintLabel();
+    document.getElementById('btn-delete').style.display = item ? 'inline-block' : 'none';
+    document.getElementById('overlay').classList.add('open');
+  }
+  function updateFormSprintLabel(){
+    document.getElementById('f-sprint-label').textContent = formSprintAssigned ? formSprint : '(sin asignar)';
+  }
+  function closeModal(){ document.getElementById('overlay').classList.remove('open'); editingId=null; }
+
+  document.getElementById('btn-cancel').onclick = closeModal;
+  document.getElementById('overlay').addEventListener('click', function(e){ if(e.target.id==='overlay') closeModal(); });
+  document.getElementById('btn-new').onclick = function(){ openModal(null); };
+
+  document.getElementById('f-sprint-prev').onclick = function(){ formSprint = shiftId(formSprintAssigned?formSprint:currentSprint, -1); formSprintAssigned=true; updateFormSprintLabel(); };
+  document.getElementById('f-sprint-next').onclick = function(){ formSprint = shiftId(formSprintAssigned?formSprint:currentSprint, 1); formSprintAssigned=true; updateFormSprintLabel(); };
+  document.getElementById('f-sprint-clear').onclick = function(){ formSprintAssigned=false; updateFormSprintLabel(); };
+
+  document.getElementById('btn-delete').onclick = function(){
+    if(!editingId) return;
+    if(!confirm('¿Eliminar esta iniciativa?')) return;
+    dbDelete(editingId).then(refresh).then(closeModal).catch(function(e){ showBanner('No se pudo eliminar: '+e.message, false); });
+  };
+
+  document.getElementById('item-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var estado = document.getElementById('f-estado').value;
+    var prevItem = editingId ? items.find(function(i){return i.id===editingId;}) : null;
+    var data = {
+      iniciativa: document.getElementById('f-iniciativa').value.trim(),
+      frente: document.getElementById('f-frente').value,
+      responsable: document.getElementById('f-responsable').value.trim(),
+      causa: document.getElementById('f-causa').value.trim(),
+      impacto: document.getElementById('f-impacto').value ? +document.getElementById('f-impacto').value : null,
+      esfuerzo: document.getElementById('f-esfuerzo').value ? +document.getElementById('f-esfuerzo').value : null,
+      estado: estado,
+      sprint: formSprintAssigned ? formSprint : null,
+      ccpm: document.getElementById('f-ccpm').value.trim(),
+      notas: document.getElementById('f-notas').value.trim()
+    };
+    if(estado === 'Listo' && !(prevItem && prevItem.fechaListo)){
+      data.fechaListo = todayISO();
+    } else if(prevItem && prevItem.fechaListo){
+      data.fechaListo = prevItem.fechaListo;
+    }
+
+    if(editingId){
+      var merged = Object.assign({}, prevItem, data, {id: editingId});
+      dbPut(merged).then(refresh).then(closeModal).catch(function(err){ showBanner('No se pudo guardar: '+err.message, false); });
+    } else {
+      data.id = genId();
+      data.codigo = 'BK-' + String(items.length+1).padStart(3,'0');
+      data.fechaIngreso = todayISO();
+      data.createdAt = Date.now();
+      dbPut(data).then(refresh).then(closeModal).catch(function(err){ showBanner('No se pudo guardar: '+err.message, false); });
+    }
+  });
+
+  // ---------- export / import JSON ----------
+  document.getElementById('btn-export').onclick = function(){
+    dbGetAll().then(function(all){
+      var payload = {app:'backlog-area-tecnica', exportedAt: new Date().toISOString(), items: all};
+      var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'backlog-area-tecnica-' + todayISO() + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      showBanner('Exportado: ' + all.length + ' iniciativas.', true);
+    });
+  };
+
+  document.getElementById('btn-import-trigger').onclick = function(){
+    document.getElementById('file-import').click();
+  };
+  document.getElementById('file-import').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var payload;
+      try{ payload = JSON.parse(reader.result); }
+      catch(err){ showBanner('El archivo no es un JSON válido.', false); return; }
+      var incoming = Array.isArray(payload) ? payload : (payload.items || []);
+      incoming = incoming.filter(function(it){ return it && it.id && it.iniciativa; });
+      if(!incoming.length){ showBanner('El archivo no tiene iniciativas para importar.', false); return; }
+      var replace = document.getElementById('chk-replace').checked;
+      var p = replace ? dbClear().then(function(){ return dbBulkPut(incoming); }) : dbBulkPut(incoming);
+      p.then(refresh).then(function(){
+        showBanner((replace ? 'Reemplazado con ' : 'Combinado — ') + incoming.length + ' iniciativas importadas.', true);
+      }).catch(function(err){ showBanner('Error importando: '+err.message, false); });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // ---------- sprint tab nav ----------
+  document.getElementById('sprint-prev').onclick = function(){ currentSprint = shiftId(currentSprint,-1); renderSprint(); };
+  document.getElementById('sprint-next').onclick = function(){ currentSprint = shiftId(currentSprint,1); renderSprint(); };
+
+  // ---------- tabs ----------
+  document.querySelectorAll('nav.tabs button.tabbtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('nav.tabs button.tabbtn').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      document.querySelectorAll('section.view').forEach(function(v){v.classList.remove('active');});
+      document.getElementById('view-'+btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  var bannerTimer = null;
+  function showBanner(msg, ok){
+    var el = document.getElementById('banner');
+    el.innerHTML = '<div class="banner'+(ok?' ok':'')+'">'+esc(msg)+'</div>';
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(function(){ el.innerHTML=''; }, 5000);
+  }
+
+  // ---------- boot ----------
+  renderFilters();
+  renderAll();
+
+  refresh().then(function(){
+    maybeSeed();
+  }).catch(function(err){
+    document.getElementById('status-line').textContent = 'No se pudo abrir el almacenamiento local: ' + err.message;
+  });
+
+  var seedTried = false;
+  function maybeSeed(){
+    if(seedTried || items.length) return;
+    seedTried = true;
+    var seeds = [
+      {
+        id: genId(), codigo: "BK-001",
+        iniciativa: "Resolver cuello de botella de ascensos en Nivel A (Experto)",
+        frente: "Formación",
+        causa: "Al llegar a Nivel A no hay dónde ubicar/reubicar al personal experto; si el ascenso sigue constante, el área se queda sin Nivel C para labores básicas (limpieza de equipos, monitoreo de contratos).",
+        responsable: "", impacto: null, esfuerzo: null, estado: "Backlog", sprint: null, ccpm: "", notas: "",
+        fechaIngreso: todayISO(), createdAt: Date.now()
+      },
+      {
+        id: genId(), codigo: "BK-002",
+        iniciativa: "Asegurar cumplimiento de fechas de capacitación por parte de las coordinaciones técnicas",
+        frente: "Formación",
+        causa: "Las coordinaciones técnicas suelen poner trabas o incumplir las fechas de capacitación alegando falta de disponibilidad.",
+        responsable: "", impacto: null, esfuerzo: null, estado: "Backlog", sprint: null, ccpm: "", notas: "",
+        fechaIngreso: todayISO(), createdAt: Date.now()+1
+      }
+    ];
+    dbBulkPut(seeds).then(refresh);
+  }
+
+})();
+</script>
+</body>
+</html>
